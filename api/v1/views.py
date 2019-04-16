@@ -61,14 +61,12 @@ def _series_response(request, _series, json=True):
                 request, _series, _chapter.volume, json=False
             )
     for _author in _series.authors.all():
-        names = [_author.name]
-        for alias in _author.aliases.all():
-            names.append(alias.alias)
+        names = [a.alias for a in _author.aliases.all()]
+        names.insert(0, _author.name)
         response['authors'].append(names)
     for _artist in _series.artists.all():
-        names = [_artist.name]
-        for alias in _artist.aliases.all():
-            names.append(alias.alias)
+        names = [a.alias for a in _artist.aliases.all()]
+        names.insert(0, _artist.name)
         response['artists'].append(names)
     for _category in _series.categories.all():
         response['categories'].append({
@@ -82,19 +80,14 @@ def _person_response(request, _person, json=True):
     response = {
         'id': _person.id,
         'name': _person.name,
-        'aliases': [],
+        'aliases': [a.alias for a in _person.aliases.all()],
         'series': [],
     }
-    for alias in _person.aliases.all():
-        response['aliases'].append(alias.alias)
     for _series in _person.series_set.all():
-        aliases = []
-        for alias in _series.aliases.all():
-            aliases.append(alias.alias)
         response['series'].append({
             'slug': _series.slug,
             'title': _series.title,
-            'aliases': aliases,
+            'aliases': [a.alias for a in _series.aliases.all()],
         })
     return JsonVaryAllowResponse(response) if json else response
 
@@ -103,12 +96,10 @@ def _member_response(request, _member, json=True):
     response = {
         'id': _member.id,
         'name': _member.name,
-        'roles': [],
+        'roles': [r.get_role_display() for r in _member.roles.all()],
         'twitter': _member.twitter,
         'discord': _member.discord,
     }
-    for role in _member.roles.all():
-        response['roles'].append(role.get_role_display())
     return JsonVaryAllowResponse(response) if json else response
 
 
@@ -127,22 +118,22 @@ def _group_response(request, _group, json=True):
         'members': [],
         'series': [],
     }
-    for role in _group.roles.values('member_id').distinct():
-        _member = Member.objects.get(id=role['member_id'])
-        response['members'].append(
-            _member_response(request, _member, json=False)
-        )
+    member_ids = _group.roles.values_list(
+        'member_id', flat=True
+    ).distinct()
+    for m_id in member_ids:
+        response['members'].append(_member_response(
+            request, Member.objects.get(id=m_id), json=False
+        ))
     _series = []
     for _chapter in _group.releases.all():
-        if _chapter.series.title not in _series:
+        if _chapter.series.id not in _series:
             response['series'].append({
                 'slug': _chapter.series.slug,
                 'title': _chapter.series.title,
-                'aliases': [],
+                'aliases': [a.alias for a in _chapter.series.aliases.all()]
             })
-            for alias in _chapter.series.aliases.all():
-                response['series'][-1]['aliases'].append(alias.alias)
-            _series.append(_chapter.series.title)
+            _series.append(_chapter.series.id)
     return JsonVaryAllowResponse(response) if json else response
 
 
@@ -197,9 +188,10 @@ def _latest(request, slug=None, vol=None, num=None):
 def all_series(request):
     if request.method not in ['GET', 'HEAD']:
         return JsonError('Method not allowed', 405)
-    response = []
-    for s in get_response(request):
-        response.append(_series_response(request, s, json=False))
+    response = [
+        _series_response(request, s, json=False)
+        for s in get_response(request)
+    ]
     return JsonVaryAllowResponse(response, safe=False)
 
 
@@ -208,9 +200,8 @@ def all_series(request):
 def series(request, slug):
     if request.method not in ['GET', 'HEAD']:
         return JsonError('Method not allowed', 405)
-    prefetch = ('aliases', 'authors', 'artists', 'categories')
     try:
-        _series = Series.objects.prefetch_related(*prefetch).get(slug=slug)
+        _series = Series.objects.get(slug=slug)
     except ObjectDoesNotExist:
         return JsonError('Not found', 404)
     return _series_response(request, _series)
@@ -263,9 +254,7 @@ def all_people(request):
     prefetch = ('aliases', 'series_set__aliases')
     _type = Author if _is_author(request) else Artist
     people = _type.objects.prefetch_related(*prefetch).all()
-    response = []
-    for _person in people:
-        response.append(_person_response(request, _person, json=False))
+    response = [_person_response(request, p, json=False) for p in people]
     return JsonVaryAllowResponse(response, safe=False)
 
 
@@ -293,9 +282,7 @@ def all_groups(request):
         return JsonError('Method not allowed', 405)
     prefetch = ('releases__series', 'roles__member')
     _groups = Group.objects.prefetch_related(*prefetch).all()
-    response = []
-    for g in _groups:
-        response.append(_group_response(request, g, json=False))
+    response = [_group_response(request, g, json=False) for g in _groups]
     return JsonVaryAllowResponse(response, safe=False)
 
 

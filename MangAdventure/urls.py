@@ -11,7 +11,7 @@ urlpatterns = [
     url(r'^$', index, name='index'),
     url(r'^', include('config.urls')),
     url(r'^search/$', search, name='search'),
-    url(r'^admin/', admin.site.urls),
+    url(r'^admin-panel/', admin.site.urls),
     url(r'^reader/', include('reader.urls')),
     url(r'^api/', include('api.urls')),
     url(r'^groups/', include('groups.urls')),

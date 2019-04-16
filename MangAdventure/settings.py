@@ -353,6 +353,9 @@ LOGIN_URL = '/user/login'
 # The age of session cookies (1 month).
 SESSION_COOKIE_AGE = 2592000
 
+# Use HttpOnly flag on the session cookie.
+SESSION_COOKIE_HTTPONLY = True
+
 # Don't expire the session when the user closes their browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
@@ -385,7 +388,7 @@ if not all([EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER,
 # List of User-Agents that are not allowed to visit any page.
 DISALLOWED_USER_AGENTS = [regex(bot, IGNORECASE) for bot in BOTS]
 
-# Use HttpOnly flag on the CSRF cookie
+# Use HttpOnly flag on the CSRF cookie.
 CSRF_COOKIE_HTTP_ONLY = True
 
 env.setdefault('HTTPS', get_config('HTTPS', 'on'))
@@ -456,7 +459,7 @@ try:
     CSP_BASE_URI = ("'none'",)
 
     # URLs beginning with any of these will not get the CSP headers.
-    CSP_EXCLUDE_URL_PREFIXES = ('/api', '/admin')
+    CSP_EXCLUDE_URL_PREFIXES = ('/api', '/admin-panel')
 except ImportError:
     pass
 

@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+v0.5.2
+^^^^^^
+
+* Moved ``/admin`` page to ``/admin-panel``
+* Fixed missing fields in series API response
+* Disabled autocomplete in password inputs
+
 v0.5.1
 ^^^^^^
 

@@ -75,7 +75,7 @@ Create an administrator account
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You will be prompted for a name, email, and password.
-This account is needed to access the ``/admin`` page.
+This account is needed to access the ``/admin-panel/`` page.
 You can create multiple administrator accounts.
 
 .. code-block:: shell
